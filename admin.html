@@ -364,7 +364,7 @@ async function renderAdmin() {
       '<td class="td-actions">' +
         '<button class="icon-btn map" onclick="openMap(\'' + r.Latitud + '\',\'' + r.Longitud + '\')" title="Ver en Maps">' +
           '<i class="ti ti-map-2"></i></button>' +
-        '<button class="icon-btn del" onclick="deleteRecord(\'' + r.ID + '\')" title="Eliminar">' +
+        '<button class="icon-btn del" onclick="deleteRecord(\'' + r.fila + '\')" title="Eliminar">' +
           '<i class="ti ti-trash"></i></button>' +
       '</td>' +
     '</tr>';
@@ -383,10 +383,10 @@ function openMap(lat, lng) {
   window.open('https://maps.google.com/maps?q=' + lat + ',' + lng, '_blank');
 }
 
-async function deleteRecord(id) {
+async function deleteRecord(fila) {
   if (!confirm('¿Eliminar este registro?')) return;
   try {
-    await api({ action: 'delete', id });
+    await api({ action: 'delete', fila });
     showToast('Registro eliminado', false);
     renderAdmin();
   } catch(e) {

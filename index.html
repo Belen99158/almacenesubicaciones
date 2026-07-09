@@ -354,8 +354,10 @@ body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsJuWah02iRO9ISDiaZxNk9pmOAOLM7dD1kkTbHbTR0xCT-I8urPTyQiFnKT7urHdJ/exec';
 
 // Base de clientes: hoja de Google Sheets publicada como CSV (Almacenes).
-// Columnas esperadas: RUC, RAZON SOCIAL, PARROQUIA, DIRECCION, ASESOR COMERCIAL, ...
 const BASE_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTme7yroowtjLNCh3lAx9D9EmrJc3sPrHjjZvPiQ3lihjHPPGhIqN4LkPh_An8pWLSFzJDwTopFdYbP/pub?gid=0&single=true&output=csv';
+// Respaldo local: archivo Excel en la misma carpeta que este index.html.
+// Se usa automáticamente si la hoja de Google está vacía o no responde.
+const BASE_XLSX_LOCAL = 'clientes.xlsx';
 // ============================================================
 
 // Mapa: nombre del asesor en el formulario → cómo aparece en la columna
@@ -454,13 +456,31 @@ function normalizar(s) {
     .replace(/\s+/g, ' ').trim();
 }
 
-// Lee una columna por su nombre, tolerando espacios sobrantes y mayúsculas
-// (los encabezados de la hoja traen espacios al final, p. ej. "PARROQUIA ").
+// Normaliza un nombre de columna: mayúsculas, sin acentos y tratando
+// guiones bajos / signos como espacios, para que "RAZON_SOCIAL" y
+// "RAZON SOCIAL" se consideren la misma columna.
+function claveCol(s) {
+  return String(s || '').toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[_\-.]+/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+// Arregla texto con doble codificación (p. ej. "IÃ‘AQUITO" → "IÑAQUITO")
+function arreglarTexto(s) {
+  s = String(s || '');
+  if (!/Ã|Â/.test(s)) return s.trim();
+  const map = { 'Ã‘':'Ñ','Ã±':'ñ','Ã¡':'á','Ã©':'é','Ã­':'í','Ã³':'ó','Ãº':'ú',
+    'Ã\u0081':'Á','Ã‰':'É','Ã\u008d':'Í','Ã“':'Ó','Ãš':'Ú','Ã¼':'ü','Ã¤':'ä','Â':'' };
+  return s.replace(/Ã‘|Ã±|Ã¡|Ã©|Ã­|Ã³|Ãº|Ã\u0081|Ã‰|Ã\u008d|Ã“|Ãš|Ã¼|Ã¤|Â/g, m => map[m] || m).trim();
+}
+
+// Lee una columna por su nombre, tolerando espacios, guiones bajos y mayúsculas.
 function col(row, ...nombres) {
   const keys = Object.keys(row);
   for (const n of nombres) {
-    const objetivo = normalizar(n);
-    const k = keys.find(k => normalizar(k) === objetivo);
+    const objetivo = claveCol(n);
+    const k = keys.find(k => claveCol(k) === objetivo);
     if (k && String(row[k]).trim() !== '') return String(row[k]).trim();
   }
   return '';
@@ -470,11 +490,14 @@ function procesarFilas(rows) {
   const vistos = new Set();
   baseClientes = [];
   rows.forEach(r => {
-    const nombre = col(r, 'RAZON SOCIAL', 'RAZÓN SOCIAL', 'Nombre Comercial');
+    // Nombre a mostrar: primero el nombre comercial/fantasía, si no la razón social
+    const nombre = arreglarTexto(
+      col(r, 'NOMBRE_FANTASIA_COMERCIAL', 'RAZON_SOCIAL', 'RAZON SOCIAL', 'Nombre Comercial'));
     if (!nombre) return;
-    const ruc      = col(r, 'RUC', 'identificacion');
-    const ciudad   = col(r, 'PARROQUIA', 'DIRECCION', 'ciudad');
-    const vendedor = col(r, 'ASESOR COMERCIAL', 'vendedor');
+    const ruc      = col(r, 'NUMERO_RUC', 'RUC', 'identificacion');
+    const ciudad   = arreglarTexto(
+      col(r, 'DESCRIPCION_PARROQUIA_EST', 'PARROQUIA', 'DESCRIPCION_CANTON_EST', 'DIRECCION', 'ciudad'));
+    const vendedor = col(r, 'ASESOR COMERCIAL', 'ASESOR_COMERCIAL', 'vendedor');
     // Quita duplicados de la base (mismo RUC o mismo nombre+asesor)
     const clave = ruc + '|' + normalizar(nombre) + '|' + normalizar(vendedor);
     if (vistos.has(clave)) return;
@@ -484,7 +507,7 @@ function procesarFilas(rows) {
       nombreNorm: normalizar(nombre),
       ciudad,
       vendedor: normalizar(vendedor),
-      activo:   true   // la hoja no trae columna de estado → todos activos
+      activo:   true   // la base no trae columna de estado activo → todos disponibles
     });
   });
 }
@@ -498,20 +521,36 @@ function baseCargada(origen) {
 }
 
 async function cargarBase() {
+  // 1) Intentar la hoja de Google (CSV publicado)
   try {
     const resp = await fetch(BASE_CSV_URL);
-    if (!resp.ok) throw new Error('no encontrado');
-    const texto = await resp.text();
-    const wb  = XLSX.read(texto, { type: 'string' });
-    const ws  = wb.Sheets[wb.SheetNames[0]];
-    procesarFilas(XLSX.utils.sheet_to_json(ws, { defval: '' }));
-    baseCargada('Google Sheets');
-  } catch (e) {
-    const st = document.getElementById('base-status');
-    st.className = 'base-status err';
-    st.innerHTML = '<i class="ti ti-alert-circle"></i> No se pudo cargar la base desde Google Sheets. Puedes cargar un archivo manualmente:';
-    document.getElementById('base-file-btn').style.display = 'block';
-  }
+    if (resp.ok) {
+      const texto = await resp.text();
+      const wb  = XLSX.read(texto, { type: 'string' });
+      const ws  = wb.Sheets[wb.SheetNames[0]];
+      procesarFilas(XLSX.utils.sheet_to_json(ws, { defval: '' }));
+    }
+  } catch (e) { /* sin conexión: probamos el respaldo local */ }
+
+  if (baseClientes.length) { baseCargada('Google Sheets'); return; }
+
+  // 2) La hoja de Google está vacía o no cargó → usar el Excel local
+  try {
+    const resp = await fetch(BASE_XLSX_LOCAL);
+    if (resp.ok) {
+      const buf = await resp.arrayBuffer();
+      const wb  = XLSX.read(buf, { type: 'array' });
+      const ws  = wb.Sheets[wb.SheetNames[0]];
+      procesarFilas(XLSX.utils.sheet_to_json(ws, { defval: '' }));
+      if (baseClientes.length) { baseCargada('archivo local'); return; }
+    }
+  } catch (e) { /* tampoco está el archivo local */ }
+
+  // 3) Nada cargó → permitir carga manual
+  const st = document.getElementById('base-status');
+  st.className = 'base-status err';
+  st.innerHTML = '<i class="ti ti-alert-circle"></i> No se pudo cargar la base (hoja de Google vacía y sin archivo local). Puedes cargar un Excel manualmente:';
+  document.getElementById('base-file-btn').style.display = 'block';
 }
 
 function loadBaseFromFile(file) {

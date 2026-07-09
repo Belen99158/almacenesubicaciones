@@ -131,8 +131,9 @@ body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background
 
 /* ---- Buscador de clientes ---- */
 .cliente-wrap { position:relative; }
-.cliente-results { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--surface); border:1.5px solid var(--border-strong); border-radius: var(--radius-sm); max-height:250px; overflow-y:auto; z-index:50; box-shadow: var(--shadow-pop); display:none; }
+.cliente-results { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--surface); border:1.5px solid var(--border-strong); border-radius: var(--radius-sm); max-height:320px; overflow-y:auto; z-index:50; box-shadow: var(--shadow-pop); display:none; }
 .cliente-results.show { display:block; }
+.cli-head { padding:7px 12px; font-size:11px; font-weight:700; color:var(--ink-faint); background:var(--surface-alt); position:sticky; top:0; border-bottom:1px solid var(--border); }
 .cli-item { padding:10px 12px; cursor:pointer; border-bottom:1px solid var(--border); }
 .cli-item:last-child { border-bottom:none; }
 .cli-item:hover, .cli-item.active { background: var(--blue-soft); }
@@ -826,26 +827,42 @@ function onClienteInput() {
   const asesor = document.getElementById('asesor').value;
 
   if (!asesor) { box.className = 'cliente-results'; checkReady(); return; }
-  if (q.length < 2) { box.className = 'cliente-results'; checkReady(); return; }
 
   const visitadosHoy = new Set(visitasHoy.map(v => normalizar(v.cliente)));
-  const fuente = clientesAsesor.length ? clientesAsesor : baseClientes;
-  const matches = fuente.filter(c => c.nombreNorm.includes(q)).slice(0, 15);
+  const tieneCartera = clientesAsesor.length > 0;
+  const fuente = tieneCartera ? clientesAsesor : baseClientes;
+
+  // Con el campo vacío: si el asesor tiene cartera, mostrarla COMPLETA para
+  // que la pueda ver/desplazar. Si no tiene cartera, esperar a que escriba.
+  let lista;
+  if (!q) {
+    if (!tieneCartera) { box.className = 'cliente-results'; checkReady(); return; }
+    lista = fuente.slice();
+  } else {
+    lista = fuente.filter(c => c.nombreNorm.includes(q));
+  }
+
+  const TOPE = 300;                       // suficiente para cualquier cartera
+  const matches = lista.slice(0, TOPE);
 
   if (!matches.length) {
     box.innerHTML = '<div class="cli-empty">No está en tu cartera — se registrará tal como lo escribas <b>(prospecto / cliente nuevo)</b>. Recuerda marcar el motivo "Prospección" si aplica.</div>';
-    // Indicador permanente bajo el campo
     sel.innerHTML = '<i class="ti ti-user-search"></i> Cliente nuevo o prospecto (no está en tu cartera)';
     sel.className = 'cli-selected prospecto show';
   } else {
-    box.innerHTML = matches.map((c, i) => {
+    const encabezado =
+      '<div class="cli-head">' +
+        (q ? matches.length + ' de ' + lista.length + ' coincidencia' + (lista.length === 1 ? '' : 's')
+           : 'Tu cartera: ' + fuente.length + ' clientes · escribe para filtrar') +
+      '</div>';
+    box.innerHTML = encabezado + matches.map((c, i) => {
       const tags = [];
-      if (!c.activo) tags.push('<span class="cli-tag inactivo">inactivo</span>');
       if (visitadosHoy.has(c.nombreNorm)) tags.push('<span class="cli-tag visitado">visitado hoy</span>');
       return '<div class="cli-item" onmousedown="elegirCliente(' + i + ')">' +
         '<div class="cli-name">' + escapeHtml(c.nombre) + '</div>' +
         '<div class="cli-meta"><span>' + escapeHtml(c.ciudad) + '</span>' + tags.join('') + '</div></div>';
-    }).join('');
+    }).join('') +
+    (lista.length > TOPE ? '<div class="cli-head">…y ' + (lista.length - TOPE) + ' más. Escribe para acotar.</div>' : '');
     box._matches = matches;
   }
   box.className = 'cliente-results show';

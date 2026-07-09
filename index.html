@@ -361,10 +361,9 @@ body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background
 // ============================================================
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsJuWah02iRO9ISDiaZxNk9pmOAOLM7dD1kkTbHbTR0xCT-I8urPTyQiFnKT7urHdJ/exec';
 
-// Base de clientes: hoja de Google Sheets publicada como CSV (Almacenes).
-const BASE_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTme7yroowtjLNCh3lAx9D9EmrJc3sPrHjjZvPiQ3lihjHPPGhIqN4LkPh_An8pWLSFzJDwTopFdYbP/pub?gid=0&single=true&output=csv';
-// Respaldo local: archivo Excel en la misma carpeta que este index.html.
-// Se usa automáticamente si la hoja de Google está vacía o no responde.
+// La base de clientes (los 225 para elegir) se lee del Excel local, que va
+// en la misma carpeta que este index.html. La hoja de Google (SCRIPT_URL)
+// es donde se GUARDAN los registros, no de donde se leen los clientes.
 const BASE_XLSX_LOCAL = 'clientes.xlsx';
 // ============================================================
 
@@ -502,10 +501,12 @@ function procesarFilas(rows) {
     const nombre = arreglarTexto(
       col(r, 'NOMBRE_FANTASIA_COMERCIAL', 'RAZON_SOCIAL', 'RAZON SOCIAL', 'Nombre Comercial'));
     if (!nombre) return;
-    const ruc      = col(r, 'NUMERO_RUC', 'RUC', 'identificacion');
-    const ciudad   = arreglarTexto(
-      col(r, 'DESCRIPCION_PARROQUIA_EST', 'PARROQUIA', 'DESCRIPCION_CANTON_EST', 'DIRECCION', 'ciudad'));
-    const vendedor = col(r, 'ASESOR COMERCIAL', 'ASESOR_COMERCIAL', 'vendedor');
+    const ruc       = col(r, 'NUMERO_RUC', 'RUC', 'identificacion');
+    const codigo    = col(r, 'CODIGO_JURISDICCION', 'CODIGO JURISDICCION');
+    const parroquia = arreglarTexto(col(r, 'DESCRIPCION_PARROQUIA_EST', 'PARROQUIA', 'DESCRIPCION_CANTON_EST'));
+    const direccion = arreglarTexto(col(r, 'DIRECCION'));
+    const telefono  = col(r, 'TELEFONO');
+    const vendedor  = col(r, 'ASESOR COMERCIAL', 'ASESOR_COMERCIAL', 'vendedor');
     // Quita duplicados de la base (mismo RUC o mismo nombre+asesor)
     const clave = ruc + '|' + normalizar(nombre) + '|' + normalizar(vendedor);
     if (vistos.has(clave)) return;
@@ -513,9 +514,10 @@ function procesarFilas(rows) {
     baseClientes.push({
       nombre,
       nombreNorm: normalizar(nombre),
-      ciudad,
+      ruc, codigo, parroquia, direccion, telefono,
+      ciudad:   parroquia || direccion,  // etiqueta que se muestra bajo el nombre
       vendedor: normalizar(vendedor),
-      activo:   true   // la base no trae columna de estado activo → todos disponibles
+      activo:   true
     });
   });
 }
@@ -529,20 +531,7 @@ function baseCargada(origen) {
 }
 
 async function cargarBase() {
-  // 1) Intentar la hoja de Google (CSV publicado)
-  try {
-    const resp = await fetch(BASE_CSV_URL);
-    if (resp.ok) {
-      const texto = await resp.text();
-      const wb  = XLSX.read(texto, { type: 'string' });
-      const ws  = wb.Sheets[wb.SheetNames[0]];
-      procesarFilas(XLSX.utils.sheet_to_json(ws, { defval: '' }));
-    }
-  } catch (e) { /* sin conexión: probamos el respaldo local */ }
-
-  if (baseClientes.length) { baseCargada('Google Sheets'); return; }
-
-  // 2) La hoja de Google está vacía o no cargó → usar el Excel local
+  // La base de clientes se lee del archivo Excel local (clientes.xlsx)
   try {
     const resp = await fetch(BASE_XLSX_LOCAL);
     if (resp.ok) {
@@ -552,12 +541,12 @@ async function cargarBase() {
       procesarFilas(XLSX.utils.sheet_to_json(ws, { defval: '' }));
       if (baseClientes.length) { baseCargada('archivo local'); return; }
     }
-  } catch (e) { /* tampoco está el archivo local */ }
+  } catch (e) { /* no se encontró el archivo local */ }
 
-  // 3) Nada cargó → permitir carga manual
+  // No se pudo cargar → permitir carga manual
   const st = document.getElementById('base-status');
   st.className = 'base-status err';
-  st.innerHTML = '<i class="ti ti-alert-circle"></i> No se pudo cargar la base (hoja de Google vacía y sin archivo local). Puedes cargar un Excel manualmente:';
+  st.innerHTML = '<i class="ti ti-alert-circle"></i> No se encontró "clientes.xlsx" en la carpeta. Cárgalo manualmente:';
   document.getElementById('base-file-btn').style.display = 'block';
 }
 
@@ -1001,11 +990,17 @@ async function submitForm() {
   btn.innerHTML = '<i class="ti ti-loader-2" style="font-size:18px"></i> Guardando...';
 
   const now = new Date();
+  const c = clienteElegido;  // datos completos si eligió de la cartera; null si es prospecto
   const payload = {
     action:  'insert',
     id:      Date.now(),
     asesor,
-    cliente,
+    cliente,                              // RAZON SOCIAL (nombre que se muestra/escribe)
+    ruc:       c ? c.ruc       : '',
+    codigo:    c ? c.codigo    : '',
+    parroquia: c ? c.parroquia : '',
+    direccion: c ? c.direccion : '',
+    telefono:  c ? c.telefono  : '',
     km:      parseInt(km),
     motivo:  selectedMotivos.join(', '),
     lat:     locationData.lat,

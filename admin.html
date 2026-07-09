@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Panel Admin — Registro de Visitas</title>
+<title>Panel Admin — Registro de Visitas · Almacenes</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -124,12 +124,14 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
 .td-actions { display: flex; gap: 6px; white-space: nowrap; }
 
 .badge { padding: 2px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
-.badge-cobro { background: var(--green-soft); color: var(--green-dark); }
-.badge-venta { background: var(--blue-soft); color: var(--blue-dark); }
-.badge-devolucion { background: var(--orange-soft); color: var(--orange-dark); }
-.badge-devolucion_garantia { background: var(--purple-soft); color: var(--purple-dark); }
-.badge-visita_comercial { background: var(--red-soft); color: var(--red-dark); }
-.badge-prospeccion_cliente { background: var(--teal-soft); color: var(--teal-dark); }
+.badge-prospeccion { background: var(--teal-soft); color: var(--teal-dark); }
+.badge-reclutamiento { background: var(--purple-soft); color: var(--purple-dark); }
+.badge-entrega_solicitud_credito { background: var(--blue-soft); color: var(--blue-dark); }
+.badge-recepcion_informacion_completa { background: var(--green-soft); color: var(--green-dark); }
+.badge-pedidos { background: var(--orange-soft); color: var(--orange-dark); }
+.badge-cobros { background: var(--red-soft); color: var(--red-dark); }
+/* motivo de inicio de actividades, por si aparece en la tabla */
+.badge-inicio_actividades { background: var(--green-soft); color: var(--green-dark); }
 
 .icon-btn { padding: 7px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; font-size: 15px; transition: all .15s; }
 .icon-btn.map:hover { background: var(--green-soft); color: var(--green-dark); border-color: var(--green); }
@@ -199,31 +201,24 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
             <label>Asesor</label>
             <select id="f-asesor">
               <option value="">Todos</option>
-              <option>JOSUE PINEDA</option>
-              <option>MOISES MOLINA</option>
-              <option>CARLOS HERRERA</option>
-              <option>DANIEL ESPAÑA</option>
-              <option>FERNANDO MEZA</option>
-              <option>CRISTIAN SALAZAR</option>
-              <option>CRISTINA CIFUENTES</option>
-              <option>DIEGO ACHACHI</option>
-              <option>PABLO PERALTA</option>
-              <option>SEBASTIAN VANEGAS</option>
-              <option>EDISON MAYORGA</option>
-              <option>EDUARDO PICO</option>
-              <option>CARLOS GRANJA</option>
+              <option>IVAN ENRIQUEZ</option>
+              <option>ALAN JIMENEZ</option>
+              <option>JOEL CORREA</option>
+              <option>FRANCISCO AZA</option>
+              <option>VENDEDOR PRENSA</option>
+              <option>VENDEDOR TUMBACO</option>
             </select>
           </div>
           <div class="filter-field">
             <label>Motivo</label>
             <select id="f-motivo">
               <option value="">Todos</option>
-              <option value="cobro">Cobro</option>
-              <option value="venta">Venta</option>
-              <option value="devolucion">Devolución</option>
-              <option value="devolucion_garantia">Dev / Garantía</option>
-              <option value="visita_comercial">Visita Comercial</option>
-              <option value="prospeccion_cliente">Prospección Cliente</option>
+              <option value="prospeccion">Prospección</option>
+              <option value="reclutamiento">Reclutamiento</option>
+              <option value="entrega_solicitud_credito">Entrega Solicitud Crédito</option>
+              <option value="recepcion_informacion_completa">Recepción Info. Completa</option>
+              <option value="pedidos">Pedidos</option>
+              <option value="cobros">Cobros</option>
             </select>
           </div>
           <div class="filter-actions">
@@ -257,9 +252,10 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
 
 <script>
 // ============================================================
-//  PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT  (termina en /exec)
+//  URL DE TU GOOGLE APPS SCRIPT (proyecto ALMACENES) — termina en /exec
+//  Debe ser LA MISMA que en index.html
 // ============================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfU4JbCUT6eqThx_0h2KYU3hEKIcgkC1ep0_vYunQd_gtkk4sqt63pFWdslaj6QpK6zw/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsJuWah02iRO9ISDiaZxNk9pmOAOLM7dD1kkTbHbTR0xCT-I8urPTyQiFnKT7urHdJ/exec';
 // ============================================================
 
 const ADMIN_PIN = '2025';
@@ -328,18 +324,18 @@ async function renderAdmin() {
   }
 
   const fr            = getFiltered();
-  const cobros        = fr.filter(r => motivosDe(r).includes('cobro')).length;
-  const ventas        = fr.filter(r => motivosDe(r).includes('venta')).length;
-  const prospecciones = fr.filter(r => motivosDe(r).includes('prospeccion_cliente')).length;
+  const cobros        = fr.filter(r => motivosDe(r).includes('cobros')).length;
+  const pedidos       = fr.filter(r => motivosDe(r).includes('pedidos')).length;
+  const prospecciones = fr.filter(r => motivosDe(r).includes('prospeccion')).length;
   const clientesUnicos = new Set(fr.map(r => (r.Cliente || '').trim().toLowerCase()).filter(Boolean)).size;
   const kmTotal        = fr.reduce((sum, r) => sum + (Number(r.Kilometraje) || 0), 0);
 
   document.getElementById('stats-row').innerHTML =
     '<div class="stat accent-blue"><div class="val">' + fr.length + '</div><div class="lbl">Registros</div></div>' +
-    '<div class="stat accent-green"><div class="val">' + cobros + '</div><div class="lbl">Cobros</div></div>' +
-    '<div class="stat accent-blue"><div class="val">' + ventas + '</div><div class="lbl">Ventas</div></div>' +
+    '<div class="stat accent-red"><div class="val">' + cobros + '</div><div class="lbl">Cobros</div></div>' +
+    '<div class="stat accent-blue"><div class="val">' + pedidos + '</div><div class="lbl">Pedidos</div></div>' +
     '<div class="stat accent-teal"><div class="val">' + prospecciones + '</div><div class="lbl">Prospecciones</div></div>' +
-    '<div class="stat accent-red"><div class="val">' + clientesUnicos + '</div><div class="lbl">Clientes únicos</div></div>' +
+    '<div class="stat accent-green"><div class="val">' + clientesUnicos + '</div><div class="lbl">Clientes únicos</div></div>' +
     '<div class="stat accent-blue"><div class="val">' + kmTotal.toLocaleString() + '</div><div class="lbl">Km recorridos</div></div>';
 
   const wrap = document.getElementById('table-wrap');

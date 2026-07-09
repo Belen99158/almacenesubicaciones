@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Registro de Visitas</title>
+<title>Registro de Visitas — Almacenes</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -149,12 +149,12 @@ body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background
 .motivo-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .motivo-btn { padding: 12px 8px; border: 1.5px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink-soft); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all .15s; }
 .motivo-btn:hover { border-color: var(--blue); color: var(--blue-dark); }
-.motivo-btn.sel-cobro       { background: var(--green);  border-color: var(--green);  color: #fff; box-shadow: 0 4px 10px rgba(14,148,96,.3); }
-.motivo-btn.sel-venta       { background: var(--blue);   border-color: var(--blue);   color: #fff; box-shadow: 0 4px 10px rgba(24,87,214,.32); }
-.motivo-btn.sel-devolucion  { background: var(--orange); border-color: var(--orange); color: #fff; box-shadow: 0 4px 10px rgba(217,116,10,.3); }
-.motivo-btn.sel-garantia    { background: var(--purple); border-color: var(--purple); color: #fff; box-shadow: 0 4px 10px rgba(124,58,237,.3); }
-.motivo-btn.sel-visita      { background: var(--red);    border-color: var(--red);    color: #fff; box-shadow: 0 4px 10px rgba(224,49,43,.32); }
 .motivo-btn.sel-prospeccion { background: var(--teal);   border-color: var(--teal);   color: #fff; box-shadow: 0 4px 10px rgba(14,150,160,.3); }
+.motivo-btn.sel-reclutamiento { background: var(--purple); border-color: var(--purple); color: #fff; box-shadow: 0 4px 10px rgba(124,58,237,.3); }
+.motivo-btn.sel-entrega     { background: var(--blue);   border-color: var(--blue);   color: #fff; box-shadow: 0 4px 10px rgba(24,87,214,.32); }
+.motivo-btn.sel-recepcion   { background: var(--green);  border-color: var(--green);  color: #fff; box-shadow: 0 4px 10px rgba(14,148,96,.3); }
+.motivo-btn.sel-pedidos     { background: var(--orange); border-color: var(--orange); color: #fff; box-shadow: 0 4px 10px rgba(217,116,10,.3); }
+.motivo-btn.sel-cobros      { background: var(--red);    border-color: var(--red);    color: #fff; box-shadow: 0 4px 10px rgba(224,49,43,.32); }
 
 .loc-btn { width: 100%; padding: 12px 12px; border: 1.5px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink-soft); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all .15s; }
 .loc-btn:hover:not(:disabled) { border-color: var(--blue); }
@@ -200,7 +200,7 @@ body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background
       <div class="header-badge"><i class="ti ti-map-pin"></i></div>
       <div class="header-text">
         <h1>Registro de visitas</h1>
-        <p>Control de asesores en campo</p>
+        <p>Control de asesores · Almacenes</p>
       </div>
       <a class="admin-link" href="admin.html" title="Panel administrador">
         <i class="ti ti-shield-lock"></i>
@@ -222,19 +222,12 @@ body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background
         <label>Asesor</label>
         <select id="asesor" onchange="onAsesorChange()">
           <option value="">— Selecciona tu nombre —</option>
-          <option>JOSUE PINEDA</option>
-          <option>MOISES MOLINA</option>
-          <option>CARLOS HERRERA</option>
-          <option>DANIEL ESPAÑA</option>
-          <option>FERNANDO MEZA</option>
-          <option>CRISTIAN SALAZAR</option>
-          <option>CRISTINA CIFUENTES</option>
-          <option>DIEGO ACHACHI</option>
-          <option>PABLO PERALTA</option>
-          <option>SEBASTIAN VANEGAS</option>
-          <option>EDISON MAYORGA</option>
-          <option>EDUARDO PICO</option>
-          <option>CARLOS GRANJA</option>
+          <option>IVAN ENRIQUEZ</option>
+          <option>ALAN JIMENEZ</option>
+          <option>JOEL CORREA</option>
+          <option>FRANCISCO AZA</option>
+          <option>VENDEDOR PRENSA</option>
+          <option>VENDEDOR TUMBACO</option>
         </select>
       </div>
 
@@ -285,23 +278,23 @@ body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background
       <div class="field">
         <label>Motivo de visita <span class="field-hint">(puedes elegir varios)</span></label>
         <div class="motivo-group">
-          <button class="motivo-btn" id="btn-cobro" onclick="selectMotivo('cobro')">
-            <i class="ti ti-cash" style="font-size:16px"></i> Cobro
+          <button class="motivo-btn" id="btn-prospeccion" onclick="selectMotivo('prospeccion')">
+            <i class="ti ti-user-search" style="font-size:16px"></i> Prospección
           </button>
-          <button class="motivo-btn" id="btn-venta" onclick="selectMotivo('venta')">
-            <i class="ti ti-tag" style="font-size:16px"></i> Venta
+          <button class="motivo-btn" id="btn-reclutamiento" onclick="selectMotivo('reclutamiento')">
+            <i class="ti ti-users-plus" style="font-size:16px"></i> Reclutamiento
           </button>
-          <button class="motivo-btn" id="btn-devolucion" onclick="selectMotivo('devolucion')">
-            <i class="ti ti-arrow-back-up" style="font-size:16px"></i> Devolución
+          <button class="motivo-btn" id="btn-entrega" onclick="selectMotivo('entrega_solicitud_credito')">
+            <i class="ti ti-file-text" style="font-size:16px"></i> Entrega Solicitud Crédito
           </button>
-          <button class="motivo-btn" id="btn-garantia" onclick="selectMotivo('devolucion_garantia')">
-            <i class="ti ti-shield-check" style="font-size:16px"></i> Dev / Garantía
+          <button class="motivo-btn" id="btn-recepcion" onclick="selectMotivo('recepcion_informacion_completa')">
+            <i class="ti ti-file-check" style="font-size:16px"></i> Recepción Info. Completa
           </button>
-          <button class="motivo-btn" id="btn-visita" onclick="selectMotivo('visita_comercial')">
-            <i class="ti ti-briefcase" style="font-size:16px"></i> Visita Comercial
+          <button class="motivo-btn" id="btn-pedidos" onclick="selectMotivo('pedidos')">
+            <i class="ti ti-clipboard-list" style="font-size:16px"></i> Pedidos
           </button>
-          <button class="motivo-btn" id="btn-prospeccion" onclick="selectMotivo('prospeccion_cliente')">
-            <i class="ti ti-user-search" style="font-size:16px"></i> Prospección Cliente
+          <button class="motivo-btn" id="btn-cobros" onclick="selectMotivo('cobros')">
+            <i class="ti ti-cash" style="font-size:16px"></i> Cobros
           </button>
         </div>
       </div>
@@ -356,29 +349,26 @@ body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background
 
 <script>
 // ============================================================
-//  PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT  (termina en /exec)
+//  URL DE TU GOOGLE APPS SCRIPT (proyecto ALMACENES) — termina en /exec
 // ============================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfU4JbCUT6eqThx_0h2KYU3hEKIcgkC1ep0_vYunQd_gtkk4sqt63pFWdslaj6QpK6zw/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsJuWah02iRO9ISDiaZxNk9pmOAOLM7dD1kkTbHbTR0xCT-I8urPTyQiFnKT7urHdJ/exec';
 
-// Nombre del archivo Excel con la base de clientes (debe estar en la
-// misma carpeta que este index.html; reemplázalo cuando actualices la base)
-const BASE_XLSX = 'clientes.xlsx';
+// Base de clientes: hoja de Google Sheets publicada como CSV (Almacenes).
+// Columnas esperadas: RUC, RAZON SOCIAL, PARROQUIA, DIRECCION, ASESOR COMERCIAL, ...
+const BASE_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTme7yroowtjLNCh3lAx9D9EmrJc3sPrHjjZvPiQ3lihjHPPGhIqN4LkPh_An8pWLSFzJDwTopFdYbP/pub?gid=0&single=true&output=csv';
 // ============================================================
 
-// Mapa: nombre del asesor en el formulario → nombre del vendedor en el Excel
+// Mapa: nombre del asesor en el formulario → cómo aparece en la columna
+// "ASESOR COMERCIAL" de la hoja. Se usa además una comparación tolerante
+// (por palabras), así que funciona aunque en la hoja el nombre venga más
+// largo o en distinto orden.
 const ASESOR_VENDEDOR = {
-  'JOSUE PINEDA':       'PINEDA MACAS JOSUE MIGUEL',
-  'MOISES MOLINA':      'MOLINA VILLALBA JOSE MOISES',
-  'CARLOS HERRERA':     'HERRERA PAREDES CARLOS ANDRES',
-  'DANIEL ESPAÑA':      'ESPAÑA SIERRA DANIEL TRIFON',
-  'FERNANDO MEZA':      'MEZA VERA JIMMY FERNANDO',
-  'CRISTIAN SALAZAR':   'SALAZAR CAICEDO CRISTIAN NEY',
-  'CRISTINA CIFUENTES': 'CIFUENTES ROSAS CRISTINA GUADALUPE',
-  'PABLO PERALTA':      'PERALTA PEÑA PABLO MANUEL',
-  'SEBASTIAN VANEGAS':  'VANEGAS GUAMAN JAVIER SEBASTIAN',
-  'EDISON MAYORGA':     'MAYORGA COLOMA EDISON SANTIAGO',
-  'EDUARDO PICO':       'PICO GRANDA VICTOR EDUARDO'
-  // DIEGO ACHACHI y CARLOS GRANJA: sin cartera en la base → escriben libre
+  'IVAN ENRIQUEZ':    'IVAN ENRIQUEZ',
+  'ALAN JIMENEZ':     'ALAN JIMENEZ',
+  'JOEL CORREA':      'JOEL CORREA',
+  'FRANCISCO AZA':    'FRANCISCO AZA',
+  'VENDEDOR PRENSA':  'VENDEDOR PRENSA',
+  'VENDEDOR TUMBACO': 'VENDEDOR TUMBACO'
 };
 
 let selectedMotivos = [];
@@ -464,22 +454,37 @@ function normalizar(s) {
     .replace(/\s+/g, ' ').trim();
 }
 
+// Lee una columna por su nombre, tolerando espacios sobrantes y mayúsculas
+// (los encabezados de la hoja traen espacios al final, p. ej. "PARROQUIA ").
+function col(row, ...nombres) {
+  const keys = Object.keys(row);
+  for (const n of nombres) {
+    const objetivo = normalizar(n);
+    const k = keys.find(k => normalizar(k) === objetivo);
+    if (k && String(row[k]).trim() !== '') return String(row[k]).trim();
+  }
+  return '';
+}
+
 function procesarFilas(rows) {
   const vistos = new Set();
   baseClientes = [];
   rows.forEach(r => {
-    const nombre = String(r['Nombre Comercial'] || r['Razón Social'] || '').trim();
+    const nombre = col(r, 'RAZON SOCIAL', 'RAZÓN SOCIAL', 'Nombre Comercial');
     if (!nombre) return;
-    // Quita duplicados de la base (misma identificación o mismo nombre+vendedor)
-    const clave = (r['identificacion'] || '') + '|' + normalizar(nombre) + '|' + normalizar(r['vendedor']);
+    const ruc      = col(r, 'RUC', 'identificacion');
+    const ciudad   = col(r, 'PARROQUIA', 'DIRECCION', 'ciudad');
+    const vendedor = col(r, 'ASESOR COMERCIAL', 'vendedor');
+    // Quita duplicados de la base (mismo RUC o mismo nombre+asesor)
+    const clave = ruc + '|' + normalizar(nombre) + '|' + normalizar(vendedor);
     if (vistos.has(clave)) return;
     vistos.add(clave);
     baseClientes.push({
       nombre,
       nombreNorm: normalizar(nombre),
-      ciudad:   String(r['ciudad'] || '').trim(),
-      vendedor: normalizar(r['vendedor']),
-      activo:   String(r['estado']) !== '0'
+      ciudad,
+      vendedor: normalizar(vendedor),
+      activo:   true   // la hoja no trae columna de estado → todos activos
     });
   });
 }
@@ -494,17 +499,17 @@ function baseCargada(origen) {
 
 async function cargarBase() {
   try {
-    const resp = await fetch(BASE_XLSX);
+    const resp = await fetch(BASE_CSV_URL);
     if (!resp.ok) throw new Error('no encontrado');
-    const buf = await resp.arrayBuffer();
-    const wb  = XLSX.read(buf, { type: 'array' });
+    const texto = await resp.text();
+    const wb  = XLSX.read(texto, { type: 'string' });
     const ws  = wb.Sheets[wb.SheetNames[0]];
     procesarFilas(XLSX.utils.sheet_to_json(ws, { defval: '' }));
-    baseCargada();
+    baseCargada('Google Sheets');
   } catch (e) {
     const st = document.getElementById('base-status');
     st.className = 'base-status err';
-    st.innerHTML = '<i class="ti ti-alert-circle"></i> No se encontró "' + BASE_XLSX + '". Puedes cargarlo manualmente:';
+    st.innerHTML = '<i class="ti ti-alert-circle"></i> No se pudo cargar la base desde Google Sheets. Puedes cargar un archivo manualmente:';
     document.getElementById('base-file-btn').style.display = 'block';
   }
 }
@@ -525,6 +530,20 @@ function loadBaseFromFile(file) {
   reader.readAsArrayBuffer(file);
 }
 
+/* Compara el "ASESOR COMERCIAL" de la hoja con el asesor seleccionado.
+   Coincide si uno contiene al otro, o si todas las palabras del más corto
+   están en el más largo (tolera nombres más largos o en otro orden). */
+function vendedorCoincide(vendHoja, asesorSel) {
+  if (!vendHoja || !asesorSel) return false;
+  if (vendHoja === asesorSel) return true;
+  if (vendHoja.includes(asesorSel) || asesorSel.includes(vendHoja)) return true;
+  const a = vendHoja.split(' ').filter(Boolean);
+  const b = asesorSel.split(' ').filter(Boolean);
+  const corto = a.length <= b.length ? a : b;
+  const largo = a.length <= b.length ? b : a;
+  return corto.every(p => largo.includes(p));
+}
+
 /* ================= ASESOR + VISITAS DE HOY ================= */
 function onAsesorChange(mantener) {
   const asesor = document.getElementById('asesor').value;
@@ -534,7 +553,7 @@ function onAsesorChange(mantener) {
     document.getElementById('cli-selected').className = 'cli-selected';
   }
   const vendedor = ASESOR_VENDEDOR[asesor] ? normalizar(ASESOR_VENDEDOR[asesor]) : null;
-  clientesAsesor = vendedor ? baseClientes.filter(c => c.vendedor === vendedor) : [];
+  clientesAsesor = vendedor ? baseClientes.filter(c => vendedorCoincide(c.vendedor, vendedor)) : [];
 
   const panel = document.getElementById('today-panel');
   if (asesor) {
@@ -778,7 +797,7 @@ function onClienteInput() {
   const matches = fuente.filter(c => c.nombreNorm.includes(q)).slice(0, 15);
 
   if (!matches.length) {
-    box.innerHTML = '<div class="cli-empty">No está en tu cartera — se registrará tal como lo escribas <b>(prospecto / cliente nuevo)</b>. Recuerda marcar el motivo "Prospección Cliente" si aplica.</div>';
+    box.innerHTML = '<div class="cli-empty">No está en tu cartera — se registrará tal como lo escribas <b>(prospecto / cliente nuevo)</b>. Recuerda marcar el motivo "Prospección" si aplica.</div>';
     // Indicador permanente bajo el campo
     sel.innerHTML = '<i class="ti ti-user-search"></i> Cliente nuevo o prospecto (no está en tu cartera)';
     sel.className = 'cli-selected prospecto show';
@@ -830,12 +849,12 @@ function selectMotivo(m) {
 }
 
 const MOTIVO_MAP = {
-  cobro:               { id: 'btn-cobro',       cls: 'sel-cobro' },
-  venta:               { id: 'btn-venta',       cls: 'sel-venta' },
-  devolucion:          { id: 'btn-devolucion',  cls: 'sel-devolucion' },
-  devolucion_garantia: { id: 'btn-garantia',    cls: 'sel-garantia' },
-  visita_comercial:    { id: 'btn-visita',      cls: 'sel-visita' },
-  prospeccion_cliente: { id: 'btn-prospeccion', cls: 'sel-prospeccion' }
+  prospeccion:                    { id: 'btn-prospeccion',   cls: 'sel-prospeccion' },
+  reclutamiento:                  { id: 'btn-reclutamiento', cls: 'sel-reclutamiento' },
+  entrega_solicitud_credito:      { id: 'btn-entrega',       cls: 'sel-entrega' },
+  recepcion_informacion_completa: { id: 'btn-recepcion',     cls: 'sel-recepcion' },
+  pedidos:                        { id: 'btn-pedidos',       cls: 'sel-pedidos' },
+  cobros:                         { id: 'btn-cobros',        cls: 'sel-cobros' }
 };
 
 function updateMotivoButtons() {

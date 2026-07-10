@@ -137,6 +137,10 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
 .badge-cobros { background: var(--red-soft); color: var(--red-dark); }
 /* motivo de inicio de actividades, por si aparece en la tabla */
 .badge-inicio_actividades { background: var(--green-soft); color: var(--green-dark); }
+.badge-verif-si { background: var(--green-soft); color: var(--green-dark); }
+.badge-verif-corr { background: var(--orange-soft); color: var(--orange-dark); }
+.badge-verif-nuevo { background: var(--teal-soft); color: var(--teal-dark); }
+.badge-verif-no { background: var(--surface-alt); color: var(--ink-faint); }
 
 .icon-btn { padding: 7px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; font-size: 15px; transition: all .15s; }
 .icon-btn.map:hover { background: var(--green-soft); color: var(--green-dark); border-color: var(--green); }
@@ -261,7 +265,7 @@ table.data-table tbody tr:hover { background: var(--blue-soft); }
 //  URL DE TU GOOGLE APPS SCRIPT (proyecto ALMACENES) — termina en /exec
 //  Debe ser LA MISMA que en index.html
 // ============================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6hKaYnK6oUp9_mJ2Qu21HQsauE-scjdrLLf3vZhdKYXBIDhiKJGaB7HeF3uX8te-a/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxH0u30cvLJ98GTk9taNZI0AYEv7MaroKXfU27ex6pFDso-0DU-RTIZjwOTZiZ2H8ON/exec';
 // ============================================================
 
 const ADMIN_PIN = '2025';
@@ -299,6 +303,15 @@ function lockAdmin() {
 /* ---- helper: lista de motivos de un registro ---- */
 function motivosDe(r) {
   return (r.Motivo || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+}
+
+// Insignia para la columna DATOS VERIFICADOS
+function verifBadge(v) {
+  const val = String(v || '').toUpperCase().trim();
+  if (val === 'SI')        return '<span class="badge badge-verif-si">✓ VERIFICADO</span>';
+  if (val === 'CORREGIDO') return '<span class="badge badge-verif-corr">✎ CORREGIDO</span>';
+  if (val === 'NUEVO')     return '<span class="badge badge-verif-nuevo">+ NUEVO</span>';
+  return '<span class="badge badge-verif-no">—</span>';
 }
 
 function getFiltered() {
@@ -360,6 +373,7 @@ async function renderAdmin() {
       '<td class="td-cliente">' + (r.Cliente || '') + '</td>' +
       '<td class="td-fecha">' + (r.Fecha || '') + ' ' + (r.Hora || '') + '</td>' +
       '<td><div class="td-motivos">' + badges + '</div></td>' +
+      '<td class="td-verif">' + verifBadge(r.Verificado) + '</td>' +
       '<td class="td-km">' + Number(r.Kilometraje || 0).toLocaleString() + ' km</td>' +
       '<td class="td-actions">' +
         '<button class="icon-btn map" onclick="openMap(\'' + r.Latitud + '\',\'' + r.Longitud + '\')" title="Ver en Maps">' +
@@ -373,7 +387,7 @@ async function renderAdmin() {
   wrap.innerHTML =
     '<table class="data-table">' +
       '<thead><tr>' +
-        '<th>Asesor</th><th>Cliente</th><th>Fecha / Hora</th><th>Motivo(s)</th><th>Km</th><th>Acciones</th>' +
+        '<th>Asesor</th><th>Cliente</th><th>Fecha / Hora</th><th>Motivo(s)</th><th>Datos</th><th>Km</th><th>Acciones</th>' +
       '</tr></thead>' +
       '<tbody>' + rows + '</tbody>' +
     '</table>';
@@ -402,6 +416,11 @@ function exportExcel() {
   const data = fr.map(r => ({
     'Asesor':           r.Asesor        || '',
     'Cliente':          r.Cliente       || '',
+    'RUC':              r.RUC           || '',
+    'Parroquia':        r.Parroquia     || '',
+    'Direccion':        r.Direccion     || '',
+    'Telefono':         r.Telefono      || '',
+    'Datos verificados': r.Verificado   || '',
     'Fecha':            r.Fecha         || '',
     'Hora':             r.Hora          || '',
     'Motivo':           r.Motivo        || '',

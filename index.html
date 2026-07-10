@@ -138,14 +138,34 @@ body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background
 .cli-item:last-child { border-bottom:none; }
 .cli-item:hover, .cli-item.active { background: var(--blue-soft); }
 .cli-name { font-size:13px; font-weight:600; color:var(--ink); }
+.cli-razon { font-size:11px; color: var(--ink-soft); margin-top:1px; }
 .cli-meta { font-size:11px; color: var(--ink-faint); margin-top:2px; display:flex; gap:8px; align-items:center; }
 .cli-tag { display:inline-block; font-size:10px; font-weight:700; padding:1px 7px; border-radius:20px; }
 .cli-tag.inactivo { background: var(--red-soft); color: var(--red-dark); }
+.cli-tag.localn { background: var(--blue-soft); color: var(--blue-dark); }
 .cli-tag.visitado { background: var(--green-soft); color: var(--green-dark); }
 .cli-empty { padding:12px; font-size:12.5px; color: var(--ink-faint); }
 .cli-selected { display:none; margin-top:7px; font-size:12px; color: var(--green-dark); font-weight:600; align-items:center; gap:5px; }
-.cli-selected.show { display:flex; }
-.cli-selected.prospecto { color: var(--teal-dark); }
+.cli-selected.show { display:block; }
+.cli-selected.prospecto { color: var(--teal-dark); display:none; }
+.cli-selected.prospecto.show { display:flex; }
+.cli-ok-linea { display:flex; align-items:center; gap:5px; }
+.cli-datos { margin-top:6px; background:var(--surface-alt); border:1px solid var(--border); border-radius: var(--radius-sm); padding:8px 10px; display:flex; flex-direction:column; gap:5px; }
+.cli-dato { font-size:12px; font-weight:500; color:var(--ink-soft); display:flex; align-items:flex-start; gap:7px; line-height:1.35; }
+.cli-dato i { color:var(--ink-faint); font-size:14px; margin-top:1px; flex-shrink:0; }
+.cli-falta { color:var(--red-dark); font-weight:600; }
+.dato-row { display:flex; align-items:center; gap:8px; margin-top:8px; }
+.dato-row i { color:var(--ink-faint); font-size:16px; flex-shrink:0; }
+.dato-row input { flex:1; }
+.dato-row input.editado { border-color: var(--orange); background:#FFF9F0; }
+.dato-row input.faltante { border-color: var(--red); }
+.dato-row input.verificado { border-color: var(--green); background: var(--green-soft); }
+.dato-ok-btn { width:100%; margin-top:9px; padding:10px; border:1.5px solid var(--green); border-radius: var(--radius-sm); background: var(--surface); color: var(--green-dark); font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition: all .15s; }
+.dato-ok-btn.ok { background: var(--green); color:#fff; }
+.dato-aviso { font-size:11px; color: var(--ink-faint); margin-top:6px; min-height:13px; }
+.dato-aviso .ed { color: var(--orange-dark); font-weight:600; }
+.dato-aviso .fa { color: var(--red-dark); font-weight:600; }
+.dato-aviso .vf { color: var(--green-dark); font-weight:600; }
 .base-status { font-size:11px; margin-top:6px; display:flex; align-items:center; gap:5px; color: var(--ink-faint); }
 .base-status.err { color: var(--red-dark); font-weight:600; }
 #base-file-btn { display:none; margin-top:8px; }
@@ -277,6 +297,22 @@ body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background
         </div>
       </div>
 
+      <div class="field" id="datos-cliente-box" style="display:none">
+        <label>Datos del cliente <span class="field-hint">(verifica y corrige — lo que escribas aquí es lo que se guarda)</span></label>
+        <div class="dato-row">
+          <i class="ti ti-map-pin"></i>
+          <input type="text" id="dato-direccion" placeholder="Dirección del cliente" autocomplete="off" oninput="marcarDatoEditado(this)">
+        </div>
+        <div class="dato-row">
+          <i class="ti ti-phone"></i>
+          <input type="tel" id="dato-telefono" placeholder="Teléfono del cliente" autocomplete="off" oninput="marcarDatoEditado(this)">
+        </div>
+        <button type="button" class="dato-ok-btn" id="dato-ok-btn" onclick="confirmarDatos()">
+          <i class="ti ti-check"></i> Datos correctos, todo bien
+        </button>
+        <div class="dato-aviso" id="dato-aviso"></div>
+      </div>
+
       <div class="field">
         <label>Kilometraje del vehículo</label>
         <input type="number" id="km" placeholder="Ej: 45230" min="0" oninput="checkReady()">
@@ -360,7 +396,7 @@ body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background
 // ============================================================
 //  URL DE TU GOOGLE APPS SCRIPT (proyecto ALMACENES) — termina en /exec
 // ============================================================
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6hKaYnK6oUp9_mJ2Qu21HQsauE-scjdrLLf3vZhdKYXBIDhiKJGaB7HeF3uX8te-a/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxH0u30cvLJ98GTk9taNZI0AYEv7MaroKXfU27ex6pFDso-0DU-RTIZjwOTZiZ2H8ON/exec';
 
 // La base de clientes (los 225 para elegir) se lee del Excel local, que va
 // en la misma carpeta que este index.html. La hoja de Google (SCRIPT_URL)
@@ -387,6 +423,7 @@ let baseClientes    = [];   // toda la base
 let clientesAsesor  = [];   // cartera del asesor seleccionado
 let visitasHoy      = [];   // visitas de hoy del asesor
 let clienteElegido  = null; // cliente seleccionado de la lista (o null si es texto libre)
+let datosModo       = null; // null | 'cartera' | 'prospecto' — estado de los campos de datos
 let dupConfirmado   = false;
 let enviando        = false;
 
@@ -497,30 +534,41 @@ function col(row, ...nombres) {
 function procesarFilas(rows) {
   const vistos = new Set();
   baseClientes = [];
+  const locsPorRuc = {};   // para saber qué clientes tienen varios locales
   rows.forEach(r => {
+    const razon  = arreglarTexto(col(r, 'RAZON_SOCIAL', 'RAZON SOCIAL'));
+    const fantasia = arreglarTexto(col(r, 'NOMBRE_FANTASIA_COMERCIAL', 'Nombre Comercial'));
     // Nombre a mostrar: primero el nombre comercial/fantasía, si no la razón social
-    const nombre = arreglarTexto(
-      col(r, 'NOMBRE_FANTASIA_COMERCIAL', 'RAZON_SOCIAL', 'RAZON SOCIAL', 'Nombre Comercial'));
+    const nombre = fantasia || razon;
     if (!nombre) return;
     const ruc       = col(r, 'NUMERO_RUC', 'RUC', 'identificacion');
+    const local     = col(r, 'NUMERO_ESTABLECIMIENTO');
+    const estadoEst = col(r, 'ESTADO_ESTABLECIMIENTO');   // ABI = abierto, CER = cerrado
     const codigo    = col(r, 'CODIGO_JURISDICCION', 'CODIGO JURISDICCION');
     const parroquia = arreglarTexto(col(r, 'DESCRIPCION_PARROQUIA_EST', 'PARROQUIA', 'DESCRIPCION_CANTON_EST'));
     const direccion = arreglarTexto(col(r, 'DIRECCION'));
     const telefono  = col(r, 'TELEFONO');
     const vendedor  = col(r, 'ASESOR COMERCIAL', 'ASESOR_COMERCIAL', 'vendedor');
-    // Quita duplicados de la base (mismo RUC o mismo nombre+asesor)
-    const clave = ruc + '|' + normalizar(nombre) + '|' + normalizar(vendedor);
+    // Quita duplicados exactos, pero CONSERVA cada local distinto del mismo RUC
+    const clave = ruc + '|' + local + '|' + normalizar(nombre) + '|' + normalizar(vendedor);
     if (vistos.has(clave)) return;
     vistos.add(clave);
+    if (ruc) locsPorRuc[ruc] = (locsPorRuc[ruc] || 0) + 1;
     baseClientes.push({
       nombre,
+      razon,
+      // Texto de búsqueda: nombre comercial + razón social, para encontrarlo
+      // por cualquiera de los dos (p.ej. "Villavicencio" aunque muestre otro nombre)
+      buscar:   normalizar(nombre + ' ' + razon),
       nombreNorm: normalizar(nombre),
-      ruc, codigo, parroquia, direccion, telefono,
-      ciudad:   parroquia || direccion,  // etiqueta que se muestra bajo el nombre
+      ruc, local, codigo, parroquia, direccion, telefono,
+      ciudad:   parroquia || direccion,
       vendedor: normalizar(vendedor),
-      activo:   true
+      activo:   normalizar(estadoEst) !== 'CER'
     });
   });
+  // Marcar los que comparten RUC (varios locales) para mostrar "Local N"
+  baseClientes.forEach(c => { c.multiLocal = !!(c.ruc && locsPorRuc[c.ruc] > 1); });
 }
 
 function baseCargada(origen) {
@@ -587,6 +635,8 @@ function onAsesorChange(mantener) {
   if (!mantener) {
     document.getElementById('cliente').value = '';
     clienteElegido = null;
+    ocultarDatosEditables();
+    datosModo = null;
     document.getElementById('cli-selected').className = 'cli-selected';
   }
   const vendedor = ASESOR_VENDEDOR[asesor] ? normalizar(ASESOR_VENDEDOR[asesor]) : null;
@@ -826,7 +876,7 @@ function onClienteInput() {
   const box = document.getElementById('cliente-results');
   const asesor = document.getElementById('asesor').value;
 
-  if (!asesor) { box.className = 'cliente-results'; checkReady(); return; }
+  if (!asesor) { box.className = 'cliente-results'; ocultarDatosEditables(); datosModo = null; checkReady(); return; }
 
   const visitadosHoy = new Set(visitasHoy.map(v => normalizar(v.cliente)));
   const tieneCartera = clientesAsesor.length > 0;
@@ -836,10 +886,11 @@ function onClienteInput() {
   // que la pueda ver/desplazar. Si no tiene cartera, esperar a que escriba.
   let lista;
   if (!q) {
+    ocultarDatosEditables(); datosModo = null;
     if (!tieneCartera) { box.className = 'cliente-results'; checkReady(); return; }
     lista = fuente.slice();
   } else {
-    lista = fuente.filter(c => c.nombreNorm.includes(q));
+    lista = fuente.filter(c => c.buscar.includes(q));
   }
 
   const TOPE = 300;                       // suficiente para cualquier cartera
@@ -849,6 +900,9 @@ function onClienteInput() {
     box.innerHTML = '<div class="cli-empty">No está en tu cartera — se registrará tal como lo escribas <b>(prospecto / cliente nuevo)</b>. Recuerda marcar el motivo "Prospección" si aplica.</div>';
     sel.innerHTML = '<i class="ti ti-user-search"></i> Cliente nuevo o prospecto (no está en tu cartera)';
     sel.className = 'cli-selected prospecto show';
+    // Prospecto: mostrar los campos vacíos para recolectar dirección y teléfono
+    // (solo se limpian al ENTRAR a este modo, no con cada tecla)
+    if (datosModo !== 'prospecto') { prepararDatosEditables('', '', 'prospecto'); datosModo = 'prospecto'; }
   } else {
     const encabezado =
       '<div class="cli-head">' +
@@ -857,10 +911,20 @@ function onClienteInput() {
       '</div>';
     box.innerHTML = encabezado + matches.map((c, i) => {
       const tags = [];
+      if (c.multiLocal && c.local) tags.push('<span class="cli-tag localn">Local ' + escapeHtml(c.local) + '</span>');
+      if (!c.activo) tags.push('<span class="cli-tag inactivo">cerrado en SRI</span>');
       if (visitadosHoy.has(c.nombreNorm)) tags.push('<span class="cli-tag visitado">visitado hoy</span>');
+      // Si el nombre comercial es distinto de la razón social, mostramos la razón
+      // social debajo (así se encuentra por apellido, p.ej. "Villavicencio").
+      const sub = (c.razon && normalizar(c.razon) !== c.nombreNorm)
+        ? '<div class="cli-razon">' + escapeHtml(c.razon) + '</div>' : '';
+      // Para varios locales, la parroquia + inicio de la dirección distingue cada uno
+      const lugar = c.multiLocal && c.direccion
+        ? c.ciudad + ' · ' + c.direccion.split('/').pop().trim().slice(0, 38)
+        : c.ciudad;
       return '<div class="cli-item" onmousedown="elegirCliente(' + i + ')">' +
-        '<div class="cli-name">' + escapeHtml(c.nombre) + '</div>' +
-        '<div class="cli-meta"><span>' + escapeHtml(c.ciudad) + '</span>' + tags.join('') + '</div></div>';
+        '<div class="cli-name">' + escapeHtml(c.nombre) + '</div>' + sub +
+        '<div class="cli-meta"><span>' + escapeHtml(lugar) + '</span>' + tags.join('') + '</div></div>';
     }).join('') +
     (lista.length > TOPE ? '<div class="cli-head">…y ' + (lista.length - TOPE) + ' más. Escribe para acotar.</div>' : '');
     box._matches = matches;
@@ -875,10 +939,98 @@ function elegirCliente(i) {
   clienteElegido = c;
   document.getElementById('cliente').value = c.nombre;
   box.className = 'cliente-results';
-  const sel = document.getElementById('cli-selected');
-  sel.innerHTML = '<i class="ti ti-circle-check"></i> Cliente de tu cartera · ' + escapeHtml(c.ciudad);
-  sel.className = 'cli-selected show';
+  mostrarDatosCliente(c);
+  datosModo = 'cartera';
   checkReady();
+}
+
+// Muestra la confirmación y carga dirección/teléfono de la base en los
+// campos editables, para que el asesor los verifique/corrija (base antigua).
+function mostrarDatosCliente(c) {
+  const sel = document.getElementById('cli-selected');
+  sel.innerHTML =
+    '<div class="cli-ok-linea"><i class="ti ti-circle-check"></i> Cliente de tu cartera' +
+      ((c.multiLocal && c.local) ? ' · Local ' + escapeHtml(c.local) : '') +
+      (c.ciudad ? ' · ' + escapeHtml(c.ciudad) : '') +
+      ((c.razon && normalizar(c.razon) !== c.nombreNorm) ? ' · ' + escapeHtml(c.razon) : '') +
+    '</div>';
+  sel.className = 'cli-selected show';
+  prepararDatosEditables(c.direccion || '', c.telefono || '', 'cartera');
+}
+
+// Prellena y marca los campos editables de dirección y teléfono.
+// modo 'cartera' muestra el botón de visto; 'prospecto' lo oculta.
+function prepararDatosEditables(dir, tel, modo) {
+  const box = document.getElementById('datos-cliente-box');
+  const iDir = document.getElementById('dato-direccion');
+  const iTel = document.getElementById('dato-telefono');
+  box.style.display = 'block';
+  iDir.value = dir;  iDir.dataset.original = dir;
+  iTel.value = tel;  iTel.dataset.original = tel;
+  iDir.className = dir ? '' : 'faltante';
+  iTel.className = tel ? '' : 'faltante';
+  const btn = document.getElementById('dato-ok-btn');
+  btn.style.display = (modo === 'prospecto') ? 'none' : 'flex';
+  btn.className = 'dato-ok-btn';
+  btn.innerHTML = '<i class="ti ti-check"></i> Datos correctos, todo bien';
+  actualizarAvisoDatos();
+}
+
+// Visto del asesor: confirma que dirección y teléfono están bien tal cual
+function confirmarDatos() {
+  const iDir = document.getElementById('dato-direccion');
+  const iTel = document.getElementById('dato-telefono');
+  // Si falta un dato, el visto no aplica: hay que completarlo
+  if (!iDir.value.trim() || !iTel.value.trim()) {
+    showToast('Completa el dato que falta antes de confirmar', true);
+    return;
+  }
+  iDir.className = 'verificado';
+  iTel.className = 'verificado';
+  const btn = document.getElementById('dato-ok-btn');
+  btn.className = 'dato-ok-btn ok';
+  btn.innerHTML = '<i class="ti ti-circle-check-filled"></i> Confirmado ✓';
+  actualizarAvisoDatos();
+}
+
+function ocultarDatosEditables() {
+  document.getElementById('datos-cliente-box').style.display = 'none';
+  document.getElementById('dato-direccion').value = '';
+  document.getElementById('dato-telefono').value = '';
+}
+
+function marcarDatoEditado(input) {
+  const orig = input.dataset.original || '';
+  if (input.value.trim() === '' ) input.className = 'faltante';
+  else if (input.value.trim() !== orig.trim()) input.className = 'editado';
+  else input.className = '';
+  // Cualquier edición quita el visto (habría que volver a confirmar)
+  const btn = document.getElementById('dato-ok-btn');
+  if (btn.className.includes('ok')) {
+    btn.className = 'dato-ok-btn';
+    btn.innerHTML = '<i class="ti ti-check"></i> Datos correctos, todo bien';
+    const otro = input.id === 'dato-direccion'
+      ? document.getElementById('dato-telefono') : document.getElementById('dato-direccion');
+    if (otro.className === 'verificado') otro.className = '';
+  }
+  actualizarAvisoDatos();
+}
+
+function actualizarAvisoDatos() {
+  const iDir = document.getElementById('dato-direccion');
+  const iTel = document.getElementById('dato-telefono');
+  const partes = [];
+  if (iDir.className === 'verificado' && iTel.className === 'verificado')
+    partes.push('<span class="vf"><i class="ti ti-shield-check"></i> Datos confirmados por el asesor</span>');
+  if (iDir.className === 'editado' || iTel.className === 'editado')
+    partes.push('<span class="ed"><i class="ti ti-pencil"></i> Dato corregido: se guardará el nuevo</span>');
+  if (iDir.className === 'faltante' && iTel.className === 'faltante')
+    partes.push('<span class="fa">Faltan dirección y teléfono — pídelos al cliente</span>');
+  else if (iDir.className === 'faltante')
+    partes.push('<span class="fa">Falta la dirección — complétala si puedes</span>');
+  else if (iTel.className === 'faltante')
+    partes.push('<span class="fa">Falta el teléfono — pídelo al cliente</span>');
+  document.getElementById('dato-aviso').innerHTML = partes.join(' · ');
 }
 
 document.addEventListener('click', e => {
@@ -1008,6 +1160,24 @@ async function submitForm() {
 
   const now = new Date();
   const c = clienteElegido;  // datos completos si eligió de la cartera; null si es prospecto
+  // Dirección y teléfono: lo que quedó en los campos editables (corregido por
+  // el asesor). Si la caja no está visible, se usa lo de la base como respaldo.
+  const cajaDatos = document.getElementById('datos-cliente-box').style.display !== 'none';
+  const dirFinal = cajaDatos ? document.getElementById('dato-direccion').value.trim() : (c ? c.direccion : '');
+  const telFinal = cajaDatos ? document.getElementById('dato-telefono').value.trim()  : (c ? c.telefono  : '');
+  // Estado para la columna DATOS VERIFICADOS de la hoja:
+  //  SI        → el asesor tocó el visto "Datos correctos"
+  //  CORREGIDO → cambió la dirección o el teléfono respecto a la base
+  //  NUEVO     → prospecto con datos recolectados
+  //  (vacío)   → registró sin revisar los datos
+  let verificado = '';
+  if (cajaDatos) {
+    const clsD = document.getElementById('dato-direccion').className;
+    const clsT = document.getElementById('dato-telefono').className;
+    if (clsD === 'verificado' && clsT === 'verificado') verificado = 'SI';
+    else if (clsD === 'editado' || clsT === 'editado')   verificado = 'CORREGIDO';
+    else if (datosModo === 'prospecto' && (dirFinal || telFinal)) verificado = 'NUEVO';
+  }
   const payload = {
     action:  'insert',
     id:      Date.now(),
@@ -1016,8 +1186,9 @@ async function submitForm() {
     ruc:       c ? c.ruc       : '',
     codigo:    c ? c.codigo    : '',
     parroquia: c ? c.parroquia : '',
-    direccion: c ? c.direccion : '',
-    telefono:  c ? c.telefono  : '',
+    direccion: dirFinal,
+    telefono:  telFinal,
+    verificado,
     km:      parseInt(km),
     motivo:  selectedMotivos.join(', '),
     lat:     locationData.lat,
@@ -1060,6 +1231,8 @@ function resetForm() {
   document.getElementById('cliente').value = '';
   document.getElementById('km').value      = '';
   clienteElegido = null;
+  ocultarDatosEditables();
+  datosModo = null;
   document.getElementById('cli-selected').className = 'cli-selected';
   selectedMotivos = []; locationData = null;
   updateMotivoButtons();

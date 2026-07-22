@@ -261,6 +261,9 @@ body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background
           <option>FRANCISCO AZA</option>
           <option>VENDEDOR PRENSA</option>
           <option>VENDEDOR TUMBACO</option>
+          <option>PACO CHONATA</option>
+          <option>LEO TAPIA</option>
+          <option>MOTORIZADO REY</option>
         </select>
       </div>
 
@@ -413,10 +416,11 @@ body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background
 // ============================================================
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxH0u30cvLJ98GTk9taNZI0AYEv7MaroKXfU27ex6pFDso-0DU-RTIZjwOTZiZ2H8ON/exec';
 
-// La base de clientes (los 225 para elegir) se lee del Excel local, que va
-// en la misma carpeta que este index.html. La hoja de Google (SCRIPT_URL)
-// es donde se GUARDAN los registros, no de donde se leen los clientes.
-const BASE_XLSX_LOCAL = 'clientes.xlsx';
+// La base de clientes se lee de este Google Sheet publicado como CSV (así no
+// hace falta tener un archivo de clientes dentro del repositorio). La hoja
+// de Google del SCRIPT_URL es donde se GUARDAN los registros, no de donde
+// se leen los clientes: son dos hojas distintas.
+const BASE_CLIENTES_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRT3_ipA_zXjOJIDep_Umu9uT1Wg-GD-cJSQ4LCyerQ7cnqW2_cbSdNkN6l1iREDkpLGyPPwnyOM_MO/pub?gid=0&single=true&output=csv';
 // ============================================================
 
 // Mapa: nombre del asesor en el formulario → cómo aparece en la columna
@@ -429,7 +433,10 @@ const ASESOR_VENDEDOR = {
   'JOEL CORREA':      'JOEL CORREA',
   'FRANCISCO AZA':    'FRANCISCO AZA',
   'VENDEDOR PRENSA':  'VENDEDOR PRENSA',
-  'VENDEDOR TUMBACO': 'VENDEDOR TUMBACO'
+  'VENDEDOR TUMBACO': 'VENDEDOR TUMBACO',
+  'PACO CHONATA':     'PACO CHONATA',
+  'LEO TAPIA':        'LEO TAPIA',
+  'MOTORIZADO REY':   'MOTORIZADO REY'
 };
 
 let selectedMotivos = [];
@@ -595,22 +602,22 @@ function baseCargada(origen) {
 }
 
 async function cargarBase() {
-  // La base de clientes se lee del archivo Excel local (clientes.xlsx)
+  // La base de clientes se lee del Google Sheet publicado (BASE_CLIENTES_CSV)
   try {
-    const resp = await fetch(BASE_XLSX_LOCAL);
+    const resp = await fetch(BASE_CLIENTES_CSV);
     if (resp.ok) {
-      const buf = await resp.arrayBuffer();
-      const wb  = XLSX.read(buf, { type: 'array' });
+      const csv = await resp.text();
+      const wb  = XLSX.read(csv, { type: 'string' });
       const ws  = wb.Sheets[wb.SheetNames[0]];
       procesarFilas(XLSX.utils.sheet_to_json(ws, { defval: '' }));
-      if (baseClientes.length) { baseCargada('archivo local'); return; }
+      if (baseClientes.length) { baseCargada('Google Sheets'); return; }
     }
-  } catch (e) { /* no se encontró el archivo local */ }
+  } catch (e) { /* sin conexión o el enlace no respondió */ }
 
   // No se pudo cargar → permitir carga manual
   const st = document.getElementById('base-status');
   st.className = 'base-status err';
-  st.innerHTML = '<i class="ti ti-alert-circle"></i> No se encontró "clientes.xlsx" en la carpeta. Cárgalo manualmente:';
+  st.innerHTML = '<i class="ti ti-alert-circle"></i> No se pudo cargar la base de clientes (revisa tu conexión). Cárgala manualmente:';
   document.getElementById('base-file-btn').style.display = 'block';
 }
 
